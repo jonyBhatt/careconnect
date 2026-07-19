@@ -1,0 +1,515 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  PATIENT
+  COMPANION
+  ADMIN
+}
+
+enum ServiceType {
+  STAY
+  CAREGIVING
+  MEDICINE_PICKUP
+  PICK_AND_DROP
+}
+
+enum BookingStatus {
+  REQUESTED // patient submitted, waiting on admin
+  OFFERED // admin offered to a companion, awaiting confirmation call
+  CONFIRMED // companion confirmed with admin
+  EN_ROUTE // companion traveling to patient/pharmacy
+  IN_PROGRESS // checked in, session active
+  COMPLETED // checked out, session finished
+  CANCELLED_PATIENT
+  CANCELLED_COMPANION
+  DISPUTED
+}
+
+enum CompanionVerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum CompanionCertification {
+  BASIC // stay-only tier
+  CAREGIVING_CERT // CNA-style / caregiving trained
+  DRIVER_VERIFIED // valid license + vehicle for pick-and-drop
+}
+
+enum PaymentLineItemType {
+  COMPANION_TIME
+  MEDICINE_PLATFORM_PORTION
+  MEDICINE_CASH_PORTION
+  PLATFORM_FEE
+  DISPATCH_FEE // late-cancel / no-show minimum fee
+  REFUND
+}
+
+enum PaymentStatus {
+  PENDING
+  HELD_IN_ESCROW
+  RELEASED
+  REFUNDED
+  DISPUTED
+}
+
+enum PrescriptionReviewStatus {
+  PENDING
+  APPROVED
+  FLAGGED_CONTROLLED_SUBSTANCE
+  REJECTED
+}
+
+enum ReceiptUploadedBy {
+  COMPANION
+  PATIENT
+}
+
+enum StrikeReason {
+  NO_SHOW
+  LATE_ARRIVAL
+  RECEIPT_MISMATCH
+  SAFETY_COMPLAINT
+  CASH_DISPUTE
+  OTHER
+}
+
+enum StrikeTargetType {
+  COMPANION
+  PATIENT
+}
+
+enum LocationSource {
+  PATIENT
+  COMPANION
+}
+
+enum SosTriggeredBy {
+  PATIENT
+  COMPANION
+}
+
+enum SosStatus {
+  OPEN
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+// ------------------------------------------------------------
+// CORE USER MODELS
+// ------------------------------------------------------------
+
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  role          UserRole
+  phone         String   @unique
+  phoneVerified Boolean  @default(false)
+  name          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  patientProfile   Patient?
+  companionProfile Companion?
+  adminProfile     Admin?
+
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@index([role])
+  @@map("user")
+}
+
+model Admin {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String    @unique @db.ObjectId
+  onCallFrom DateTime?
+  onCallTo   DateTime?
+  createdAt  DateTime  @default(now())
+
+  // dispatchedBookings AdminDispatchLog[]
+  // relayMessages      RelayMessage[]
+  // sosResponses       SosAlert[]
+}
+
+model Patient {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  user                  User     @relation(fields: [userId], references: [id])
+  userId                String   @unique @db.ObjectId
+  address               String
+  latitude              Float?
+  longitude             Float?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+  safetyNotes           String? // mobility issues, allergies relevant to companion safety - NOT diagnostic
+  managedByRelation     String? // e.g. "son", "daughter" if booking on behalf of someone else
+  locationConsentGiven  Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  bookings          Booking[]
+  ratingsGiven      Rating[]           @relation("PatientRatingsGiven")
+  ratingsReceived   Rating[]           @relation("PatientRatingsReceived")
+  // strikesReceived   Strike[]           @relation("PatientStrikes")
+  cashConfirmations CashConfirmation[]
+
+  @@index([latitude, longitude])
+}
+
+model Companion {
+  id                    String                      @id @default(auto()) @map("_id") @db.ObjectId
+  user                  User                        @relation(fields: [userId], references: [id])
+  userId                String                      @unique @db.ObjectId
+  verificationStatus    CompanionVerificationStatus @default(PENDING)
+  idDocumentUrl         String?
+  selfieUrl             String?
+  backgroundCheckStatus String?
+  drivingLicenseUrl     String?
+  vehicleInfo           String?
+  vehicleInsuranceUrl   String?
+  serviceRadiusKm       Float?
+  latitude              Float?
+  longitude             Float?
+  locationConsentGiven  Boolean                     @default(false)
+  bankOrWalletDetails   String?
+  strikeCount           Float                       @default(0)
+  averageRating         Float?
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+
+  certifications    CompanionCertificationRecord[]
+  availability      CompanionAvailability[]
+  bookings          Booking[]
+  ratingsGiven      Rating[]                       @relation("CompanionRatingsGiven")
+  ratingsReceived   Rating[]                       @relation("CompanionRatingsReceived")
+  // strikesReceived   Strike[]                       @relation("CompanionStrikes")
+  // dispatchOffers    AdminDispatchLog[]
+  // cashConfirmations CashConfirmation[]
+  cashConfirmations CashConfirmation[]
+  // strikes           Strike[]
+
+  @@index([verificationStatus])
+  @@index([latitude, longitude])
+}
+
+model CompanionCertificationRecord {
+  id            String                 @id @default(auto()) @map("_id") @db.ObjectId
+  companion     Companion              @relation(fields: [companionId], references: [id])
+  companionId   String                 @db.ObjectId
+  certification CompanionCertification
+  documentUrl   String?
+  approvedAt    DateTime?
+  createdAt     DateTime               @default(now())
+
+  @@unique([companionId, certification])
+}
+
+model CompanionAvailability {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  companion   Companion @relation(fields: [companionId], references: [id])
+  companionId String    @db.ObjectId
+  dayOfWeek   Int // 0-6
+  startTime   String // "09:00"
+  endTime     String // "18:00"
+
+  @@index([companionId])
+}
+
+// ------------------------------------------------------------
+// BOOKING
+// ------------------------------------------------------------
+
+model Booking {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  patient     Patient    @relation(fields: [patientId], references: [id])
+  patientId   String     @db.ObjectId
+  companion   Companion? @relation(fields: [companionId], references: [id])
+  companionId String?    @db.ObjectId
+
+  serviceTypes ServiceType[] // supports combined bookings e.g. [STAY, MEDICINE_PICKUP]
+  status       BookingStatus @default(REQUESTED)
+
+  scheduledStart   DateTime
+  scheduledEnd     DateTime
+  actualCheckInAt  DateTime?
+  actualCheckOutAt DateTime?
+
+  // Pick-and-drop specific
+  pickupAddress  String?
+  pickupLat      Float?
+  pickupLng      Float?
+  dropoffAddress String?
+  dropoffLat     Float?
+  dropoffLng     Float?
+
+  // Caregiving specific
+  authorizedTasks String? // checklist captured at booking, e.g. "walking assistance only, no lifting"
+
+  cancelledAt            DateTime?
+  cancelledBy            UserRole?
+  cancellationFeeApplied Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prescription     Prescription?
+  payments         PaymentLineItem[]
+  receipts         Receipt[]
+  cashConfirmation CashConfirmation?
+  locationPings    LocationPing[]
+  // dispatchLog      AdminDispatchLog[]
+  // relayMessages    RelayMessage[]
+  // sosAlerts        SosAlert[]
+  ratings          Rating[]
+  // strikes          Strike[]
+
+  @@index([status])
+  @@index([patientId])
+  @@index([companionId])
+  @@index([scheduledStart])
+}
+
+// ------------------------------------------------------------
+// ADMIN DISPATCH / RELAY (no direct patient-companion contact)
+// ------------------------------------------------------------
+
+// model AdminDispatchLog {
+//   id                   String    @id @default(auto()) @map("_id") @db.ObjectId
+//   booking              Booking   @relation(fields: [bookingId], references: [id])
+//   bookingId            String    @db.ObjectId
+//   admin                Admin     @relation(fields: [adminId], references: [id])
+//   adminId              String    @db.ObjectId
+//   offeredTo            Companion @relation(fields: [companionId], references: [id])
+//   companionId          String    @db.ObjectId
+//   offeredAt            DateTime  @default(now())
+//   companionConfirmedAt DateTime?
+//   companionDeclinedAt  DateTime?
+//   notes                String?
+
+//   @@index([bookingId])
+// }
+
+// model RelayMessage {
+//   id        String   @id @default(auto()) @map("_id") @db.ObjectId
+//   booking   Booking  @relation(fields: [bookingId], references: [id])
+//   bookingId String   @db.ObjectId
+//   admin     Admin?   @relation(fields: [adminId], references: [id])
+//   adminId   String?  @db.ObjectId
+//   fromRole  UserRole // PATIENT or COMPANION (admin relays it)
+//   message   String
+//   createdAt DateTime @default(now())
+
+//   @@index([bookingId])
+// }
+
+// model SosAlert {
+//   id                  String         @id @default(auto()) @map("_id") @db.ObjectId
+//   booking             Booking        @relation(fields: [bookingId], references: [id])
+//   bookingId           String         @db.ObjectId
+//   triggeredBy         SosTriggeredBy
+//   status              SosStatus      @default(OPEN)
+//   acknowledgedByAdmin Admin?         @relation(fields: [adminId], references: [id])
+//   adminId             String?        @db.ObjectId
+//   triggeredAt         DateTime       @default(now())
+//   resolvedAt          DateTime?
+//   notes               String?
+
+//   @@index([bookingId])
+//   @@index([status])
+// }
+
+// ------------------------------------------------------------
+// MEDICINE / PRESCRIPTION
+// ------------------------------------------------------------
+
+model Prescription {
+  id                String                   @id @default(auto()) @map("_id") @db.ObjectId
+  booking           Booking                  @relation(fields: [bookingId], references: [id])
+  bookingId         String                   @unique @db.ObjectId
+  imageUrl          String
+  reviewStatus      PrescriptionReviewStatus @default(PENDING)
+  estimatedCost     Float?
+  reviewedByAdminAt DateTime?
+  createdAt         DateTime                 @default(now())
+}
+
+model Receipt {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  booking    Booking           @relation(fields: [bookingId], references: [id])
+  bookingId  String            @db.ObjectId
+  uploadedBy ReceiptUploadedBy
+  imageUrl   String
+  amount     Float?
+  createdAt  DateTime          @default(now())
+
+  @@index([bookingId])
+}
+
+// Records the 40% cash-on-delivery portion when medicine total > 500tk
+
+model CashConfirmation {
+  id                         String     @id @default(auto()) @map("_id") @db.ObjectId
+  booking                    Booking    @relation(fields: [bookingId], references: [id])
+  bookingId                  String     @unique @db.ObjectId
+  amountExpected             Float
+  amountConfirmedByCompanion Float?
+  companion                  Companion? @relation(fields: [companionId], references: [id])
+  companionId                String?    @db.ObjectId
+  amountConfirmedByPatient   Float?
+  patient                    Patient?   @relation(fields: [patientId], references: [id])
+  patientId                  String?    @db.ObjectId
+  confirmedAt                DateTime?
+  disputed                   Boolean    @default(false)
+}
+
+// ------------------------------------------------------------
+// PAYMENTS / ESCROW
+// ------------------------------------------------------------
+
+model PaymentLineItem {
+  id           String              @id @default(auto()) @map("_id") @db.ObjectId
+  booking      Booking             @relation(fields: [bookingId], references: [id])
+  bookingId    String              @db.ObjectId
+  type         PaymentLineItemType
+  amount       Float
+  status       PaymentStatus       @default(PENDING)
+  escrowHeldAt DateTime?
+  releasedAt   DateTime?
+  refundedAt   DateTime?
+  disputeNotes String?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+// ------------------------------------------------------------
+// LIVE LOCATION
+// ------------------------------------------------------------
+
+model LocationPing {
+  id         String         @id @default(auto()) @map("_id") @db.ObjectId
+  booking    Booking        @relation(fields: [bookingId], references: [id])
+  bookingId  String         @db.ObjectId
+  source     LocationSource
+  latitude   Float
+  longitude  Float
+  recordedAt DateTime       @default(now())
+
+  @@index([bookingId, recordedAt])
+}
+
+// ------------------------------------------------------------
+// RATINGS & STRIKES
+// ------------------------------------------------------------
+
+model Rating {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  bookingId String   @db.ObjectId
+  score     Int // 1-5
+  comment   String?
+  createdAt DateTime @default(now())
+
+  // one of these pairs will be set depending on direction of rating
+  ratingPatient   Patient? @relation("PatientRatingsGiven", fields: [ratingPatientId], references: [id])
+  ratingPatientId String?  @db.ObjectId
+  ratedPatient    Patient? @relation("PatientRatingsReceived", fields: [ratedPatientId], references: [id])
+  ratedPatientId  String?  @db.ObjectId
+
+  ratingCompanion   Companion? @relation("CompanionRatingsGiven", fields: [ratingCompanionId], references: [id])
+  ratingCompanionId String?    @db.ObjectId
+  ratedCompanion    Companion? @relation("CompanionRatingsReceived", fields: [ratedCompanionId], references: [id])
+  ratedCompanionId  String?    @db.ObjectId
+
+  @@index([bookingId])
+}
+
+// model Strike {
+//   id         String           @id @default(auto()) @map("_id") @db.ObjectId
+//   booking    Booking?         @relation(fields: [bookingId], references: [id])
+//   bookingId  String?          @db.ObjectId
+//   targetType StrikeTargetType
+//   reason     StrikeReason
+//   weight     Float            @default(1.0) // e.g. 0.5 for late arrival, 1.0 for no-show
+//   notes      String?
+//   createdAt  DateTime         @default(now())
+
+//   // companion   Companion? @relation("CompanionStrikes", fields: [companionId], references: [id])
+//   companionId String?    @db.ObjectId
+//   patient     Patient?   @relation("PatientStrikes", fields: [patientId], references: [id])
+//   patientId   String?    @db.ObjectId
+//   companion   Companion? @relation(fields: [companionId], references: [id])
+
+//   @@index([companionId])
+//   @@index([patientId])
+// }
+
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  accountId             String
+  providerId            String
+  userId                String    @db.ObjectId
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
