@@ -1,14 +1,26 @@
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
-import { Noto_Sans, Playfair_Display } from "next/font/google";
+import {
+  Inter,
+  Noto_Serif_Georgian as Georgia,
+  JetBrains_Mono,
+} from "next/font/google";
 import "./globals.css";
 
-const playfairDisplayHeading = Playfair_Display({
+const fontSans = Inter({
   subsets: ["latin"],
-  variable: "--font-heading",
+  variable: "--font-sans",
 });
 
-const notoSans = Noto_Sans({ subsets: ["latin"], variable: "--font-sans" });
+const fontSerif = Georgia({
+  subsets: ["latin"],
+  variable: "--font-serif",
+});
+
+const fontMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "CareConnect",
@@ -21,18 +33,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={cn(
-        "h-full",
-        "antialiased",
-        "font-sans",
-        notoSans.variable,
-        playfairDisplayHeading.variable,
-      )}
-      suppressHydrationWarning
-    >
-      <body className="min-h-full flex flex-col antialiased">{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} min-h-full flex flex-col antialiased font-sans`}
+      >
+        {children}
+      </body>
     </html>
   );
 }
