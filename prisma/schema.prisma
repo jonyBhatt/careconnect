@@ -9,10 +9,10 @@ generator client {
   output   = "../generated/prisma"
 }
 
-datasource db {
+datasource db { 
   provider = "mongodb"
   url      = env("DATABASE_URL")
-}
+}xcv tqedca 
 
 enum UserRole {
   PATIENT
