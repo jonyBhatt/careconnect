@@ -1,5 +1,14 @@
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import React from "react";
 
-export default function MobileFunction() {
+export default async function MobileFunction() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  if (!session) {
+    redirect("/auth/sign-in");
+  }
   return <div>MobileFunction</div>;
 }
