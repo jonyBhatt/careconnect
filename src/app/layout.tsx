@@ -6,6 +6,7 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
         className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} min-h-full flex flex-col antialiased font-sans`}
       >
         {children}
+        <Toaster />
       </body>
     </html>
   );
