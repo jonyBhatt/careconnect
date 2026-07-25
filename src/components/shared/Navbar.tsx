@@ -36,7 +36,7 @@ export const Navbar = () => {
         "sticky top-0 z-50 w-full transition-all duration-300 ease-in-out",
         scrolled
           ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-slate-200/70 py-3"
-          : "bg-white/80 backdrop-blur-sm border-b border-slate-100 py-4.5"
+          : "bg-white/80 backdrop-blur-sm border-b border-slate-100 py-4.5",
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between">
@@ -62,7 +62,7 @@ export const Navbar = () => {
                   "relative px-5 py-2 text-sm font-semibold rounded-full transition-all duration-300 flex items-center justify-center",
                   isActive
                     ? "text-[#006654] shadow-xs"
-                    : "text-slate-600 hover:text-[#0a2540] hover:bg-white/60"
+                    : "text-slate-600 hover:text-[#0a2540] hover:bg-white/60",
                 )}
               >
                 {/* Active Indicator Background Pill */}
@@ -82,7 +82,7 @@ export const Navbar = () => {
 
         {/* Desktop Action Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          <Link href="/sign-in">
+          <Link href="/auth/sign-in">
             <button className="px-5 py-2.5 rounded-full border-2 border-slate-200 hover:border-[#00a884] text-[#0a2540] hover:text-[#006654] font-semibold text-sm transition-all duration-200 active:scale-95 cursor-pointer">
               Sign In
             </button>
@@ -125,7 +125,7 @@ export const Navbar = () => {
                     "px-4 py-3 rounded-2xl text-base font-semibold transition-all flex items-center justify-between",
                     isActive
                       ? "bg-[#6bead7]/20 text-[#006654] border border-[#6bead7]/40"
-                      : "text-slate-600 hover:bg-slate-50 hover:text-[#0a2540]"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-[#0a2540]",
                   )}
                 >
                   <span>{item.name}</span>
