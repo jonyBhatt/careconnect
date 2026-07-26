@@ -71,7 +71,7 @@ _(Full product spec, user stories, and sprint plan available in [`/docs`](./docs
 
 - [x] Product spec, user stories, sprint plan
 - [x] Prisma data model
-- [] Authentication with better auth
+- [ ] Authentication with better auth
 - [ ] Patient onboarding & booking flow
 - [ ] Companion onboarding & verification pipeline
 - [ ] Admin dispatch dashboard
