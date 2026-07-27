@@ -11,31 +11,16 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
 import {authClient} from "@/lib/auth-client";
-import * as z from "zod"
-import { signUpEmailAction } from "@/lib/actions/auth-action/sign-up-email.action";
 
-
-const schema = z.object({
-    countryCode: z.string(),
-    phone: z.string(),
-    email: z.string(),
-    password: z.string(),
-    name: z.string(),
-});
-
-export default function SignUpForm() {
+export default function SignInForm() {
     const [method, setMethod] = useState<"phone" | "email">("phone")
 
     const form = useForm({
         defaultValues: {
             countryCode: "+1",
+            phone: "",
             email: "",
             password: "",
-            name:"",
-            phone:  '',
-        },
-        validators: {
-            onSubmit: schema,
         },
         onSubmit: async ({value}) => {
             if (method === "phone") {
@@ -50,17 +35,24 @@ export default function SignUpForm() {
                     toast.error("Please enter a valid email address.");
                     return;
                 }
-              const {error} = await signUpEmailAction({
-                name: value.name,
-                email: value.email,
-                password: value.password,
-              })
+                await authClient.signIn.email({
+                    email: value.email,
+                    password: value.password,
+                }, {
+                    onError: (ctx) => {
+                        // Handle the error
+                        if (ctx.error.status === 403) {
+                            toast.error("Please verify your email address");
+                        }
+                        //you can also show the original error message
+                        toast.error(ctx.error.message);
+                    },
+                    onSuccess: () => {
+                        toast.success(`OTP sent to ${value.email}`);
+                    }
+                })
 
-              if (error) {
-                toast.error(error);
-              } else {
-                toast.success(`OTP sent to ${value.email}`);
-              }
+                // Handle sending OTP to email
             }
         },
     });
@@ -75,26 +67,6 @@ export default function SignUpForm() {
                 }}
                 className="space-y-4"
             >
-                <div className={" space-y-2 "}>
-                    <Label
-                        htmlFor="name"
-                        className="text-sm font-semibold text-gray-800"
-                    >
-                        Your Full Name
-                    </Label>
-                    <form.Field name="name">
-                        {(field) => (
-                            <Input
-                                id="name"
-                                type="text"
-                                placeholder="johndoe"
-                                value={field.state.value}
-                                onChange={(e) => field.handleChange(e.target.value)}
-                                className="h-11 placeholder:text-muted-foreground px-4"
-                            />
-                        )}
-                    </form.Field>
-                </div>
                 {method === "phone" ? (
                     /* Phone Input View */
                     <div className="space-y-2">
@@ -220,7 +192,7 @@ export default function SignUpForm() {
                     className="w-full h-12 text-base font-semibold text-[#002266] border-[#002266] hover:bg-blue-50/50 rounded-xl flex items-center justify-center gap-2"
                 >
                     <Mail className="w-5 h-5 stroke-2"/>
-                    Sign up with Email
+                    Sign in with Email
                 </Button>
             ) : (
                 <Button
@@ -230,7 +202,7 @@ export default function SignUpForm() {
                     className="w-full h-12 text-base font-semibold text-[#002266] border-[#002266] hover:bg-blue-50/50 rounded-xl flex items-center justify-center gap-2"
                 >
                     <Phone className="w-5 h-5 stroke-[2]"/>
-                    Sign up with Phone
+                    Sign in with Phone
                 </Button>
             )}
         </div>
