@@ -11,9 +11,11 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
 import {authClient} from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export default function SignInForm() {
     const [method, setMethod] = useState<"phone" | "email">("phone")
+    const router = useRouter();
 
     const form = useForm({
         defaultValues: {
@@ -48,7 +50,8 @@ export default function SignInForm() {
                         toast.error(ctx.error.message);
                     },
                     onSuccess: () => {
-                        toast.success(`OTP sent to ${value.email}`);
+                        // toast.success(`OTP sent to ${value.email}`);
+                        router.push("/onboard");
                     }
                 })
 
@@ -166,7 +169,7 @@ export default function SignInForm() {
                             disabled={!canSubmit || isSubmitting}
                             className="w-full h-12 text-base font-semibold text-white  hover:bg-[#001747] rounded flex items-center justify-center gap-2 transition-colors"
                         >
-                            Send OTP Code <ArrowRight className="w-4 h-4 stroke-[2.5]"/>
+                            Sign In <ArrowRight className="w-4 h-4 stroke-[2.5]"/>
                         </Button>
                     )}
                 </form.Subscribe>
@@ -201,7 +204,7 @@ export default function SignInForm() {
                     onClick={() => setMethod("phone")}
                     className="w-full h-12 text-base font-semibold text-[#002266] border-[#002266] hover:bg-blue-50/50 rounded-xl flex items-center justify-center gap-2"
                 >
-                    <Phone className="w-5 h-5 stroke-[2]"/>
+                    <Phone className="w-5 h-5 stroke-2"/>
                     Sign in with Phone
                 </Button>
             )}
