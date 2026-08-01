@@ -181,3 +181,47 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes animated-gradient-shift {
+  0% {
+    transform: translate3d(-3%, -2%, 0) scale(1.02) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(3%, 2%, 0) scale(1.08) rotate(6deg);
+  }
+  100% {
+    transform: translate3d(-1%, 3%, 0) scale(1.12) rotate(-4deg);
+  }
+}
+
+.animated-gradient-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.7;
+  animation: animated-gradient-shift 16s ease-in-out infinite alternate;
+}
+
+.animated-gradient-orb-one {
+  inset: -10% auto auto -12%;
+  width: 30rem;
+  height: 24rem;
+  background: radial-gradient(circle, var(--primary) 0%, transparent 80%);
+}
+
+.animated-gradient-orb-two {
+  inset: auto -15% -10% auto;
+  width: 28rem;
+  height: 40rem;
+  background: radial-gradient(circle, var(--secondary) 10%, transparent 72%);
+  animation-duration: 18s;
+}
+
+.animated-gradient-orb-three {
+  inset: 20% auto auto 50%;
+  width: 20rem;
+  height: 20rem;
+  background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+  animation-duration: 14s;
+  animation-delay: -4s;
+}
