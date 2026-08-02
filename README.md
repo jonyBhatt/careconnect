@@ -79,6 +79,10 @@ _(Full product spec, user stories, and sprint plan available in [`/docs`](./docs
 - [ ] Live location + SOS
 - [ ] Pilot launch (single city)
 
+## For Prisma
+
+-> pnpm prisma db push
+
 ---
 
 ## 🤝 About This Project
