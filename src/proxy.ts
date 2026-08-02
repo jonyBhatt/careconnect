@@ -13,9 +13,9 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Don't redirect if already on /mobile
-  if (pathname.startsWith("/mobile")) {
-    return NextResponse.next();
-  }
+  // if (pathname.startsWith("/mobile")) {
+  //   return NextResponse.next();
+  // }
 
   const ua = request.headers.get("user-agent") ?? "";
   const parser = new UAParser(ua);
