@@ -12,15 +12,11 @@ export async function proxy(request: NextRequest) {
   // }
   const pathname = request.nextUrl.pathname;
 
-  // Don't redirect if already on /mobile
-  // if (pathname.startsWith("/mobile")) {
-  //   return NextResponse.next();
-  // }
-
   const ua = request.headers.get("user-agent") ?? "";
   const parser = new UAParser(ua);
 
-  if (parser.getDevice().type === "mobile") {
+  // Only redirect mobile users from the root page.
+  if (parser.getDevice().type === "mobile" && pathname === "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/mobile";
     return NextResponse.redirect(url);
