@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export default function SigninPage() {
     return (
-        <div className="h-screen bg-linear-to-b from-teal-600/40 via-blue-300/30 to-gray-400/20 font-sans">
+        <div className="min-h-dvh bg-linear-to-b from-teal-600/40 via-blue-300/30 to-gray-400 font-sans">
             <div className="px-4 sm:px-8 lg:px-12 flex flex-col py-16">
                 <div className="flex flex-col gap-6">
                     <h2 className="font-semibold font-sans text-4xl">
