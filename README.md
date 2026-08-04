@@ -73,6 +73,9 @@ _(Full product spec, user stories, and sprint plan available in [`/docs`](./docs
 - [x] Prisma data model
 - [x] Authentication with better auth
 - [ ] Patient onboarding & booking flow
+  - [x] Uploadthing working. File upload successfully work.
+  - [] Save in database. Find by userid save there.
+  - [] Companion can upload documents via uploadthing.
 - [ ] Companion onboarding & verification pipeline
 - [ ] Admin dispatch dashboard
 - [ ] Escrow payment integration
