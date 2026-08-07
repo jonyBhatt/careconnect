@@ -12,7 +12,7 @@ export async function sendEmail({
   text: string;
   html?: string;
 }) {
-  console.log("To, Subject, Text", to, subject, text);
+  
   try {
     await transporter.sendMail({
     from: process.env.NEXT_PUBLIC_SMTP_USER,

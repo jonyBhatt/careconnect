@@ -25,12 +25,14 @@ export default function CertsStepPage() {
           <DocumentUploadCard 
             title="Medical License / Degree" 
             description="Upload your primary healthcare certification." 
-            iconType="id-front" 
+            iconType="certificate"
+            documentKey="medicalLicense"
           />
           <DocumentUploadCard 
             title="CPR / First Aid Certificate" 
             description="Must be valid for at least the next 6 months." 
-            iconType="id-back" 
+            iconType="certificate"
+            documentKey="cprCertificate"
           />
         </section>
       </main>

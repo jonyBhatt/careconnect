@@ -182,6 +182,7 @@ model Companion {
   verificationStatus    CompanionVerificationStatus @default(PENDING)
   idDocumentUrl         String?
   selfieUrl             String?
+  documentUploads       Json?
   backgroundCheckStatus String?
   drivingLicenseUrl     String?
   vehicleInfo           String?

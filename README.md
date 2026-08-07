@@ -73,7 +73,9 @@ _(Full product spec, user stories, and sprint plan available in [`/docs`](./docs
 - [x] Prisma data model
 - [x] Authentication with better auth
 - [ ] Patient onboarding & booking flow
+  - [] Check if email verified the user can proceed to onboarding otherwise show please verify your email.
   - [x] Uploadthing working. File upload successfully work.
+  - [] Fix selfie camera
   - [] Save in database. Find by userid save there.
   - [] Companion can upload documents via uploadthing.
 - [ ] Companion onboarding & verification pipeline

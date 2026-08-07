@@ -30,11 +30,13 @@ export default function IdentityStepPage() {
             title="National ID Card (Front)"
             description="Ensure all details are clearly legible."
             iconType="id-front"
+            documentKey="idFront"
           />
           <DocumentUploadCard
             title="National ID Card (Back)"
             description="Capture the back containing security features."
             iconType="id-back"
+            documentKey="idBack"
           />
           <SelfieVerificationCard />
         </section>
