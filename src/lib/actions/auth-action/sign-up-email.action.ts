@@ -37,6 +37,8 @@ export async function signUpEmailAction({
       }
     }
 
-    return { error: "Internal Server Error" };
+    console.log("Error Server Action: ", err)
+
+    return { error: "Internal Server Error",err };
   }
 }
