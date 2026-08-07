@@ -57,6 +57,7 @@ export default function SignUpForm() {
               })
 
               if (error) {
+                console.log("Error: ", error)
                 toast.error(error);
               } else {
                 toast.success(`OTP sent to ${value.email}`);
